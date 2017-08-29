@@ -1,5 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var {ObjectID} = require('mongodb');
 
 const port = 3000;
 
@@ -12,12 +13,15 @@ var app = express();
 app.use(bodyParser.json());
 
 app.post('/todos', (req, res) => {
-  // console.log(req.body);
+  // console.log('POST /todos');
+  
   var todo = new Todo({
     text: req.body.text
   });
 
   todo.save().then((doc) => {
+    // console.log('POST /todos:save');
+
     res.send(doc);
   }, (e) => {
     console.log(e);
@@ -26,11 +30,45 @@ app.post('/todos', (req, res) => {
 });
 
 app.get('/todos', (req, res) => {
+  // console.log('GET /todos');
+
   Todo.find().then((todos) => {
+    // console.log('GET /todos: find');
+
     res.send({todos});
   }, (e) => {
     console.log(e);
     res.status(400).send(e);
+  });
+});
+
+app.get('/users', (req, res) => {
+  User.find().then((users) => {
+    res.send({users});
+  }, (e) => {
+    console.log(e);
+    res.status(200).send(e);
+  });
+});
+
+app.get('/todos/:id', (req, res) => {
+  // console.log('GET /todos/:id');
+
+  var id = req.params.id;
+
+  if (!ObjectID.isValid(id)) {
+    return res.status(404).send();
+  }
+
+  Todo.findById(id).then((todo) => {
+    // console.log('GET /todos/:id: findById');
+
+    if (!todo) {
+      return res.status(404).send();
+    }
+    res.send({todo});
+  }).catch((e) => {
+    res.status(400).send();
   });
 });
 
