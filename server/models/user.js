@@ -35,7 +35,7 @@ var UserSchema = new mongoose.Schema({
 UserSchema.methods.generateAuthToken = function () {
   var user = this;
   var access = 'auth';
-  var token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString();
+  var token = jwt.sign({_id: user._id.toHexString(), access}, '123abc').toString();
 
   user.tokens.push({access, token});
 
@@ -45,14 +45,14 @@ UserSchema.methods.generateAuthToken = function () {
 };
 
 UserSchema.statics.findByToken = function (token) {
-  console.log('findByToken', token);
+  // console.log('\nfindByToken:\n');
   var User = this;
-  //console.log('User', User);
+  // console.log('\nUser:\n', User);
   var decoded = undefined;
 
   try {
-    decoded = jwt.verify(token, 'abc123');
-    console.log('decoded', decoded);
+    decoded = jwt.verify(token, '123abc');
+    // console.log('\ndecoded:\n', decoded);
   } catch (e) {
     return Promise.reject();
   }
@@ -61,6 +61,32 @@ UserSchema.statics.findByToken = function (token) {
     '_id': decoded._id,
     'tokens.token': token,
     'tokens.access': 'auth'
+  });
+};
+
+UserSchema.statics.findByCredentials = function (email, password) {
+  // console.log('\nfindByCredentials:\n');
+  // console.log('\nemail:', email);
+  // console.log('\npassword:', password);
+
+  var User = this;
+
+  // console.log('\nUser:', User);
+
+  return User.findOne({email}).then((user) => {
+    if (!user) {
+      return Promise.reject();
+    }
+
+    return new Promise((resolve, reject) => {
+      bcrypt.compare(password, user.password, (err, res) => {
+        if (res) {
+          resolve(user);
+        } else {
+          reject();
+        }
+      });
+    });
   });
 };
 
